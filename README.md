@@ -11,11 +11,19 @@ syncopy = require 'syncopy'
 ### Generate a snapshot
 
 ```coffeescript
-snapshot = syncopy.generate('/repos/here')
+syncopy.generate '/repos/here', (error, snapshot) ->
+  if error?
+    console.error('snapshot failed', error)
+  else
+    console.log('snapshot succeeded')
 ```
 
 ### Apply that snapshot
 
 ```coffeescript
-syncopy.restore(snapshot, '/repos/there')
+syncopy.restore snapshot, '/repos/there', (error) ->
+  if error?
+    console.error('restore failed', error)
+  else
+    console.log('restore succeeded')
 ```
