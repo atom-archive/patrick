@@ -2,6 +2,7 @@
 fs = require 'fs'
 path = require 'path'
 
+_ = require 'underscore'
 git = require 'git-utils'
 rm = require('rimraf').sync
 tmp = require 'tmp'
@@ -12,7 +13,9 @@ patrick = require '../lib/patrick'
 describe 'patrick', ->
   [snapshotHandler, mirrorHandler, sourceRepo, targetRepo, sourcePath, targetPath] = []
 
-  waitsForCommand = (command, options) ->
+  waitsForCommand = (command, options, callback) ->
+    [callback, options] = [options] if _.isFunction(options)
+
     finished = false
     error = null
     exec command, options, (err) ->
@@ -24,8 +27,9 @@ describe 'patrick', ->
 
     runs ->
       expect(error).toBeFalsy()
+      callback?()
 
-  waitsForSnapshot = ->
+  waitsForSnapshot = (callback) ->
     runs ->
       patrick.snapshot(sourcePath, snapshotHandler)
 
@@ -44,6 +48,7 @@ describe 'patrick', ->
     runs ->
       [mirrorError] = mirrorHandler.argsForCall[0]
       expect(mirrorError).toBeNull()
+      callback?()
 
   beforeEach ->
     sourcePath = null
@@ -88,3 +93,13 @@ describe 'patrick', ->
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual sourceRepo.getStatus()
+
+  describe "when the target repository does not exist", ->
+    it "clones the repository to the target path and updates the target HEAD", ->
+      sourceRepo.setConfigValue('remote.origin.url', "file://#{sourcePath}")
+      waitsForSnapshot ->
+        targetRepo = git.open(targetPath)
+        expect(targetRepo).toBeTruthy()
+        expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+        expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+        expect(targetRepo.getStatus()).toEqual {}

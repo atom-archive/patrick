@@ -10,7 +10,8 @@ tmp = require 'tmp'
 module.exports =
   snapshot: (repoPath, callback) ->
     repo = git.open(repoPath)
-    snapshot = {}
+    snapshot =
+      url: repo.getConfigValue('remote.origin.url')
 
     operations = []
     if repo.getAheadBehindCount().ahead > 0
@@ -33,11 +34,18 @@ module.exports =
 
   mirror: (repoPath, snapshot, callback) ->
     repo = git.open(repoPath)
-    {branch, head, unpushedChanges, workingDirectoryChanges} = snapshot
+    {branch, head, unpushedChanges, url, workingDirectoryChanges} = snapshot
 
     operations = []
+    unless repo?
+      operations.push (args..., callback) ->
+        command = "git clone --recursive #{url} #{repoPath}"
+        exec command, {cwd: repoPath}, (error) ->
+          repo = git.open(repoPath) unless error?
+          callback(error)
+
     if unpushedChanges
-      operations.push (callback) -> tmp.file(callback)
+      operations.push (args..., callback) -> tmp.file(callback)
       operations.push (bundleFile, args..., callback) ->
         fs.writeFile bundleFile, new Buffer(unpushedChanges, 'base64'), (error) ->
           callback(error, bundleFile)
