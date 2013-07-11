@@ -95,11 +95,25 @@ describe 'patrick', ->
         expect(fs.readFileSync(path.join(targetPath, 'a.txt'), 'utf8')).toBe 'COOL BEANS'
         expect(fs.existsSync(path.join(targetPath, 'b.txt'))).toBe false
 
+
   describe "when the target repository does not exist", ->
     it "clones the repository to the target path and updates the target HEAD", ->
       waitsForSnapshot ->
         targetRepo = git.open(targetPath)
         expect(targetRepo).toBeTruthy()
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+        expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+        expect(targetRepo.getStatus()).toEqual {}
+
+  describe 'when the target has unpushed changes', ->
+    beforeEach ->
+      cp(path.join(__dirname, 'fixtures', 'ahead.git'), path.join(targetPath, '.git'))
+      targetRepo = git.open(targetPath)
+      waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
+
+    it 'creates and checks out a new branch at the source HEAD', ->
+      waitsForCommand 'touch new.txt && git add new.txt && git ci -am"new"', {cwd: targetPath}
+      waitsForSnapshot ->
+        expect(targetRepo.getShortHead()).toBe 'master-1'
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual {}

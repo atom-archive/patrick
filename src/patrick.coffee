@@ -60,12 +60,25 @@ module.exports =
         exec command, {cwd: repoPath}, callback
 
     operations.push (args..., callback) ->
-      command = "git checkout #{branch}"
-      exec command, {cwd: repoPath}, callback
+      if repo?.getAheadBehindCount().ahead > 0
+        i = 1
+        loop
+          newBranch = "#{branch}-#{i++}"
+          break unless repo.getReferenceTarget("refs/heads/#{newBranch}")?
 
-    operations.push (args..., callback) ->
-      command = "git reset --hard #{head}"
-      exec command, {cwd: repoPath}, callback
+        command = "git checkout -b #{newBranch} #{head}"
+        exec command, {cwd: repoPath}, callback
+      else
+        operations = []
+        operations.push (args..., callback) ->
+          command = "git checkout #{branch}"
+          exec command, {cwd: repoPath}, callback
+
+        operations.push (args..., callback) ->
+          command = "git reset --hard #{head}"
+          exec command, {cwd: repoPath}, callback
+
+        async.waterfall operations, callback
 
     for relativePath, contents of workingDirectoryChanges ? {}
       do (relativePath, contents) ->
