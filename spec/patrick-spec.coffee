@@ -92,6 +92,8 @@ describe 'patrick', ->
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual sourceRepo.getStatus()
+        expect(fs.readFileSync(path.join(targetPath, 'a.txt'), 'utf8')).toBe 'COOL BEANS'
+        expect(fs.existsSync(path.join(targetPath, 'b.txt'))).toBe false
 
   describe "when the target repository does not exist", ->
     it "clones the repository to the target path and updates the target HEAD", ->
