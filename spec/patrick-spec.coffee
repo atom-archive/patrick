@@ -1,4 +1,5 @@
 {exec} = require 'child_process'
+fs = require 'fs'
 path = require 'path'
 
 tmp = require 'tmp'
@@ -24,7 +25,8 @@ describe 'patrick', ->
       expect(error).toBeFalsy()
 
   waitsForSnapshot = ->
-    patrick.snapshot(sourcePath, snapshotHandler)
+    runs ->
+      patrick.snapshot(sourcePath, snapshotHandler)
 
     waitsFor 'snapshot handler', ->
       snapshotHandler.callCount > 0
@@ -71,3 +73,15 @@ describe 'patrick', ->
           expect(targetRepo.getHead()).toBe sourceRepo.getHead()
           expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
           expect(targetRepo.getStatus()).toEqual {}
+
+    describe 'when the source repo has changes in the working directory', ->
+      beforeEach ->
+        runs ->
+          fs.writeFileSync(path.join(sourcePath, 'a.txt'), 'COOL BEANS')
+
+        waitsForSnapshot()
+
+      it "applies the changes to the target repo's working directory", ->
+        expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+        expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+        expect(targetRepo.getStatus()).toEqual sourceRepo.getStatus()
