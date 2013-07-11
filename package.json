@@ -1,0 +1,27 @@
+{
+  "name": "syncopy",
+  "version": "0.0.0",
+  "description": "Git repository syncing",
+  "license": "BSD",
+  "main": "./lib/syncopy.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atom/syncopy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/atom/syncopy/issues"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "jasmine-focused": "~0.10.0",
+    "grunt-contrib-coffee": "~0.7.0",
+    "grunt-cli": "~0.1.9",
+    "grunt-coffeelint": "0.0.7",
+    "rimraf": "~2.2.0",
+    "grunt-shell": "~0.3.0"
+  }
+}
