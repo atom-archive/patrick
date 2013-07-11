@@ -1,4 +1,4 @@
-{exec} = require 'child_process'
+child_process = require 'child_process'
 fs = require 'fs'
 path = require 'path'
 
@@ -11,6 +11,8 @@ module.exports =
   snapshot: (repoPath, callback) ->
     repo = git.open(repoPath)
     snapshot =
+      branch: repo.getShortHead()
+      head: repo.getReferenceTarget(repo.getHead())
       url: repo.getConfigValue('remote.origin.url')
 
     operations = []
@@ -19,8 +21,6 @@ module.exports =
         bundleUnpushedChanges repo, (error, bundleFile) ->
           unless error?
             snapshot.unpushedChanges = fs.readFileSync(bundleFile, 'base64')
-            snapshot.head = repo.getReferenceTarget(repo.getHead())
-            snapshot.branch = repo.getShortHead()
           callback(error)
 
     unless _.isEmpty(repo.getStatus())
@@ -37,7 +37,13 @@ module.exports =
     {branch, head, unpushedChanges, url, workingDirectoryChanges} = snapshot
 
     operations = []
-    unless repo?
+    if repo?
+      operations.push (args..., callback) ->
+        command = "git fetch #{url}"
+        exec command, {cwd: repoPath}, (error) ->
+          repo = git.open(repoPath) unless error?
+          callback(error)
+    else
       operations.push (args..., callback) ->
         command = "git clone --recursive #{url} #{repoPath}"
         exec command, {cwd: repoPath}, (error) ->
@@ -52,9 +58,10 @@ module.exports =
       operations.push (bundleFile, callback) ->
         command = "git bundle unbundle #{bundleFile}"
         exec command, {cwd: repoPath}, callback
-      operations.push (args..., callback) ->
-        command = "git checkout #{branch} && git reset --hard #{head}"
-        exec command, {cwd: repoPath}, callback
+
+    operations.push (args..., callback) ->
+      command = "git checkout #{branch} && git reset --hard #{head}"
+      exec command, {cwd: repoPath}, callback
 
     for relativePath, contents of workingDirectoryChanges ? {}
       do (relativePath, contents) ->
@@ -92,3 +99,11 @@ getWorkingDirectoryChanges = (repo, callback) ->
             callback(error)
 
   async.waterfall operations, (error) -> callback(error, workingDirectoryChanges)
+
+exec = (args..., callback) ->
+  child_process.exec args..., (error, stdout, stderr) ->
+    if error
+      error.stderr = stderr
+      error.stdout = stdout
+      error.command = args[0]
+    callback(error, stdout, stderr)

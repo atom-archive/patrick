@@ -18,8 +18,9 @@ describe 'patrick', ->
 
     finished = false
     error = null
-    exec command, options, (err) ->
+    exec command, options, (err, stdout, stderr) ->
       error = err
+      console.error 'Command failed', command, arguments if err?
       finished = true
 
     waitsFor command, ->
@@ -63,24 +64,22 @@ describe 'patrick', ->
     runs ->
       cp(path.join(__dirname, 'fixtures', 'ahead.git'), path.join(sourcePath, '.git'))
       sourceRepo = git.open(sourcePath)
+      sourceRepo.setConfigValue('remote.origin.url', "file://#{sourcePath}")
       waitsForCommand 'git reset --hard HEAD', {cwd: sourcePath}
 
   describe 'when the target repository exists', ->
     beforeEach ->
-      cp(path.join(__dirname, 'fixtures', 'ahead.git'), path.join(targetPath, '.git'))
+      cp(path.join(__dirname, 'fixtures', 'master.git'), path.join(targetPath, '.git'))
       targetRepo = git.open(targetPath)
       waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
 
     describe 'when the source has unpushed changes', ->
       describe 'when the target has no unpushed changes', ->
-        beforeEach ->
-          waitsForCommand 'git reset --hard origin/master', {cwd: targetPath}
-          waitsForSnapshot()
-
         it 'applies the unpushed changes to the target repo and updates the target HEAD', ->
-          expect(targetRepo.getHead()).toBe sourceRepo.getHead()
-          expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
-          expect(targetRepo.getStatus()).toEqual {}
+          waitsForSnapshot ->
+            expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+            expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+            expect(targetRepo.getStatus()).toEqual {}
 
     describe 'when the source repo has changes in the working directory', ->
       beforeEach ->
