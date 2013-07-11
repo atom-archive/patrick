@@ -14,7 +14,10 @@
   "bugs": {
     "url": "https://github.com/atom/syncopy/issues"
   },
-  "dependencies": {},
+  "dependencies": {
+    "git-utils": "~0.21.0",
+    "tmp": "0.0.20"
+  },
   "devDependencies": {
     "grunt": "~0.4.1",
     "jasmine-focused": "~0.10.0",
