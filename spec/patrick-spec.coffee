@@ -4,9 +4,9 @@ tmp = require 'tmp'
 cp = require('wrench').copyDirSyncRecursive
 git = require 'git-utils'
 
-syncopy = require '../lib/syncopy'
+patrick = require '../lib/patrick'
 
-describe 'syncopy', ->
+describe 'patrick', ->
   [sourceRepo, targetRepo, sourcePath, targetPath] = []
 
   beforeEach ->
@@ -37,7 +37,7 @@ describe 'syncopy', ->
         it 'applies the unpushed changes to the target repository and updates the target HEAD', ->
           snapshotHandler = jasmine.createSpy('snapshot handler')
           mirrorHandler = jasmine.createSpy('mirror handler')
-          syncopy.snapshot(sourcePath, snapshotHandler)
+          patrick.snapshot(sourcePath, snapshotHandler)
 
           waitsFor 'snapshot handler', ->
             snapshotHandler.callCount > 0
@@ -47,7 +47,7 @@ describe 'syncopy', ->
             expect(snapshotError).toBeNull()
             expect(snapshot).not.toBeNull()
 
-            syncopy.mirror(targetPath, snapshot, mirrorHandler)
+            patrick.mirror(targetPath, snapshot, mirrorHandler)
 
           waitsFor 'mirror handler', ->
             mirrorHandler.callCount > 0

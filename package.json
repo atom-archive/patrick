@@ -1,18 +1,18 @@
 {
-  "name": "syncopy",
+  "name": "patrick",
   "version": "0.0.0",
   "description": "Git repository syncing",
   "license": "BSD",
-  "main": "./lib/syncopy.js",
+  "main": "./lib/patrick.js",
   "scripts": {
     "test": "grunt test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/atom/syncopy.git"
+    "url": "https://github.com/atom/patrick.git"
   },
   "bugs": {
-    "url": "https://github.com/atom/syncopy/issues"
+    "url": "https://github.com/atom/patrick/issues"
   },
   "dependencies": {
     "git-utils": "~0.21.0",

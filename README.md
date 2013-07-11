@@ -1,17 +1,19 @@
-# syncopy
+# patrick
 
 Synchronize a Git repository from one place to another.
+
+![](https://github-images.s3.amazonaws.com/skitch/captionater_%7C_quickmeme-20130711-104249.jpg)
 
 ## Usage
 
 ```coffeescript
-syncopy = require 'syncopy'
+patrick = require 'patrick'
 ```
 
 ### Generate a snapshot
 
 ```coffeescript
-syncopy.snapshot '/repos/here', (error, snapshot) ->
+patrick.snapshot '/repos/here', (error, snapshot) ->
   if error?
     console.error('snapshot failed', error)
   else
@@ -21,7 +23,7 @@ syncopy.snapshot '/repos/here', (error, snapshot) ->
 ### Mirror a snapshot
 
 ```coffeescript
-syncopy.mirror snapshot, '/repos/there', (error) ->
+patrick.mirror snapshot, '/repos/there', (error) ->
   if error?
     console.error('mirror failed', error)
   else
