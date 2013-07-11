@@ -2,7 +2,7 @@
 
 Synchronize a Git repository from one place to another.
 
-![](https://github-images.s3.amazonaws.com/skitch/captionater_%7C_quickmeme-20130711-104249.jpg)
+![](http://i.qkme.me/3v5agm.jpg)
 
 ## Usage
 
