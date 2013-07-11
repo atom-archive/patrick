@@ -112,7 +112,8 @@ describe 'patrick', ->
       waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
 
     it 'creates and checks out a new branch at the source HEAD', ->
-      waitsForCommand 'touch new.txt && git add new.txt && git ci -am"new"', {cwd: targetPath}
+      fs.writeFileSync(path.join(targetPath, 'new.txt'), '')
+      waitsForCommand 'git add new.txt && git ci -am"new"', {cwd: targetPath}
       waitsForSnapshot ->
         expect(targetRepo.getShortHead()).toBe 'master-1'
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
