@@ -13,9 +13,7 @@ patrick = require '../lib/patrick'
 describe 'patrick', ->
   [snapshotHandler, mirrorHandler, sourceRepo, targetRepo, sourcePath, targetPath] = []
 
-  waitsForCommand = (command, options, callback) ->
-    [callback, options] = [options] if _.isFunction(options)
-
+  waitsForCommand = (command, options) ->
     finished = false
     error = null
     exec command, options, (err, stdout, stderr) ->
@@ -28,9 +26,8 @@ describe 'patrick', ->
 
     runs ->
       expect(error).toBeFalsy()
-      callback?()
 
-  waitsForSnapshot = (callback) ->
+  waitsForSnapshot = ->
     runs ->
       patrick.snapshot(sourcePath, snapshotHandler)
 
@@ -49,7 +46,19 @@ describe 'patrick', ->
     runs ->
       [mirrorError] = mirrorHandler.argsForCall[0]
       expect(mirrorError).toBeNull()
-      callback?()
+
+  waitsForSourceRepo = (name) ->
+    runs ->
+      cp(path.join(__dirname, 'fixtures', name), path.join(sourcePath, '.git'))
+      sourceRepo = git.open(sourcePath)
+      sourceRepo.setConfigValue('remote.origin.url', "file://#{sourcePath}")
+      waitsForCommand 'git reset --hard HEAD', {cwd: sourcePath}
+
+  waitsForTargetRepo = (name) ->
+    runs ->
+      cp(path.join(__dirname, 'fixtures', name), path.join(targetPath, '.git'))
+      targetRepo = git.open(targetPath)
+      waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
 
   beforeEach ->
     sourcePath = null
@@ -61,44 +70,41 @@ describe 'patrick', ->
     tmp.dir (error, tempPath) -> targetPath = tempPath
     waitsFor 'tmp files', -> sourcePath and targetPath
 
-    runs ->
-      cp(path.join(__dirname, 'fixtures', 'ahead.git'), path.join(sourcePath, '.git'))
-      sourceRepo = git.open(sourcePath)
-      sourceRepo.setConfigValue('remote.origin.url', "file://#{sourcePath}")
-      waitsForCommand 'git reset --hard HEAD', {cwd: sourcePath}
+    waitsForSourceRepo 'ahead.git'
 
-  describe 'when the target repository exists', ->
-    beforeEach ->
-      cp(path.join(__dirname, 'fixtures', 'master.git'), path.join(targetPath, '.git'))
-      targetRepo = git.open(targetPath)
-      waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
-
-    describe 'when the source has unpushed changes', ->
-      describe 'when the target has no unpushed changes', ->
-        it 'applies the unpushed changes to the target repo and updates the target HEAD', ->
-          waitsForSnapshot ->
-            expect(targetRepo.getHead()).toBe sourceRepo.getHead()
-            expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
-            expect(targetRepo.getStatus()).toEqual {}
-
-    describe 'when the source repo has changes in the working directory', ->
-      beforeEach ->
-        runs ->
-          fs.writeFileSync(path.join(sourcePath, 'a.txt'), 'COOL BEANS')
-          fs.unlinkSync(path.join(sourcePath, 'b.txt'))
+  describe 'when the source has unpushed changes', ->
+    describe 'when the target has no unpushed changes', ->
+      it 'applies the unpushed changes to the target repo and updates the target HEAD', ->
+        waitsForTargetRepo 'master.git'
         waitsForSnapshot()
 
-      it "applies the changes to the target repo's working directory", ->
+        runs ->
+          expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+          expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+          expect(targetRepo.getStatus()).toEqual {}
+
+  describe 'when the source repo has changes in the working directory', ->
+    it "applies the changes to the target repo's working directory", ->
+      waitsForTargetRepo 'master.git'
+
+      runs ->
+        fs.writeFileSync(path.join(sourcePath, 'a.txt'), 'COOL BEANS')
+        fs.unlinkSync(path.join(sourcePath, 'b.txt'))
+
+      waitsForSnapshot()
+
+      runs ->
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual sourceRepo.getStatus()
         expect(fs.readFileSync(path.join(targetPath, 'a.txt'), 'utf8')).toBe 'COOL BEANS'
         expect(fs.existsSync(path.join(targetPath, 'b.txt'))).toBe false
 
-
   describe "when the target repository does not exist", ->
     it "clones the repository to the target path and updates the target HEAD", ->
-      waitsForSnapshot ->
+      waitsForSnapshot()
+
+      runs ->
         targetRepo = git.open(targetPath)
         expect(targetRepo).toBeTruthy()
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
@@ -106,15 +112,17 @@ describe 'patrick', ->
         expect(targetRepo.getStatus()).toEqual {}
 
   describe 'when the target has unpushed changes', ->
-    beforeEach ->
-      cp(path.join(__dirname, 'fixtures', 'ahead.git'), path.join(targetPath, '.git'))
-      targetRepo = git.open(targetPath)
-      waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
-
     it 'creates and checks out a new branch at the source HEAD', ->
       fs.writeFileSync(path.join(targetPath, 'new.txt'), '')
-      waitsForCommand 'git add new.txt && git ci -am"new"', {cwd: targetPath}
-      waitsForSnapshot ->
+
+      waitsForTargetRepo 'ahead.git'
+
+      runs ->
+        waitsForCommand 'git add new.txt && git ci -am"new"', {cwd: targetPath}
+
+      waitsForSnapshot()
+
+      runs ->
         expect(targetRepo.getShortHead()).toBe 'master-1'
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual {}
