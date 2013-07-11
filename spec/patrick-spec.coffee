@@ -1,5 +1,6 @@
 {exec} = require 'child_process'
 path = require 'path'
+
 tmp = require 'tmp'
 cp = require('wrench').copyDirSyncRecursive
 git = require 'git-utils'
@@ -7,9 +8,44 @@ git = require 'git-utils'
 patrick = require '../lib/patrick'
 
 describe 'patrick', ->
-  [sourceRepo, targetRepo, sourcePath, targetPath] = []
+  [snapshotHandler, mirrorHandler, sourceRepo, targetRepo, sourcePath, targetPath] = []
+
+  waitsForCommand = (command, options) ->
+    finished = false
+    error = null
+    exec command, options, (err) ->
+      error = err
+      finished = true
+
+    waitsFor command, ->
+      finished
+
+    runs ->
+      expect(error).toBeFalsy()
+
+  waitsForSnapshot = ->
+    patrick.snapshot(sourcePath, snapshotHandler)
+
+    waitsFor 'snapshot handler', ->
+      snapshotHandler.callCount > 0
+
+    runs ->
+      [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
+      expect(snapshotError).toBeNull()
+      expect(snapshot).not.toBeNull()
+      patrick.mirror(targetPath, snapshot, mirrorHandler)
+
+    waitsFor 'mirror handler', ->
+      mirrorHandler.callCount > 0
+
+    runs ->
+      [mirrorError] = mirrorHandler.argsForCall[0]
+      expect(mirrorError).toBeNull()
 
   beforeEach ->
+    snapshotHandler = jasmine.createSpy('snapshot handler')
+    mirrorHandler = jasmine.createSpy('mirror handler')
+
     tmp.dir (error, tempPath) -> sourcePath = tempPath
     tmp.dir (error, tempPath) -> targetPath = tempPath
     waitsFor 'tmp files', -> sourcePath and targetPath
@@ -17,41 +53,21 @@ describe 'patrick', ->
     runs ->
       cp(path.join(__dirname, 'fixtures', 'ahead.git'), path.join(sourcePath, '.git'))
       sourceRepo = git.open(sourcePath)
+      waitsForCommand 'git reset --hard HEAD', {cwd: sourcePath}
 
   describe 'when the target repository exists', ->
     beforeEach ->
       cp(path.join(__dirname, 'fixtures', 'ahead.git'), path.join(targetPath, '.git'))
       targetRepo = git.open(targetPath)
+      waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
 
     describe 'when the source has unpushed changes', ->
       describe 'when the target has no unpushed changes', ->
         beforeEach ->
-          finished = false
-          exec 'git reset --hard origin/master', {cwd: targetPath}, (error) ->
-            expect(error).toBeFalsy()
-            finished = true
+          waitsForCommand 'git reset --hard origin/master', {cwd: targetPath}
+          waitsForSnapshot()
 
-          waitsFor 'git reset', ->
-            finished
-
-        it 'applies the unpushed changes to the target repository and updates the target HEAD', ->
-          snapshotHandler = jasmine.createSpy('snapshot handler')
-          mirrorHandler = jasmine.createSpy('mirror handler')
-          patrick.snapshot(sourcePath, snapshotHandler)
-
-          waitsFor 'snapshot handler', ->
-            snapshotHandler.callCount > 0
-
-          runs ->
-            [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
-            expect(snapshotError).toBeNull()
-            expect(snapshot).not.toBeNull()
-
-            patrick.mirror(targetPath, snapshot, mirrorHandler)
-
-          waitsFor 'mirror handler', ->
-            mirrorHandler.callCount > 0
-
-          runs ->
-            [mirrorError] = mirrorHandler.argsForCall[0]
-            expect(mirrorError).toBeNull()
+        it 'applies the unpushed changes to the target repo and updates the target HEAD', ->
+          expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+          expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+          expect(targetRepo.getStatus()).toEqual {}
