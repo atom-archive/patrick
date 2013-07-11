@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "git-utils": "~0.22.0",
-    "tmp": "0.0.20"
+    "tmp": "0.0.20",
+    "async": "~0.2.9",
+    "underscore": "~1.5.1"
   },
   "devDependencies": {
     "grunt": "~0.4.1",
@@ -26,8 +28,6 @@
     "grunt-coffeelint": "0.0.7",
     "rimraf": "~2.2.0",
     "grunt-shell": "~0.3.0",
-    "wrench": "~1.5.1",
-    "async": "~0.2.9",
-    "underscore": "~1.5.1"
+    "wrench": "~1.5.1"
   }
 }
