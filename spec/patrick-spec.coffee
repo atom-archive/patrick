@@ -95,7 +95,6 @@ describe 'patrick', ->
 
   describe "when the target repository does not exist", ->
     it "clones the repository to the target path and updates the target HEAD", ->
-      sourceRepo.setConfigValue('remote.origin.url', "file://#{sourcePath}")
       waitsForSnapshot ->
         targetRepo = git.open(targetPath)
         expect(targetRepo).toBeTruthy()
