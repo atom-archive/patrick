@@ -52,7 +52,10 @@ module.exports =
       do (relativePath, contents) ->
         operations.push (args..., callback) ->
           filePath = path.join(repoPath, relativePath)
-          fs.writeFile filePath, new Buffer(contents, 'base64'), callback
+          if contents?
+            fs.writeFile filePath, new Buffer(contents, 'base64'), callback
+          else
+            fs.unlink filePath, callback
 
     async.waterfall operations, callback
 
@@ -68,10 +71,16 @@ bundleUnpushedChanges = (repo, callback) ->
 getWorkingDirectoryChanges = (repo, callback) ->
   operations = []
   workingDirectoryChanges = {}
-  _.keys(repo.getStatus()).forEach (relativePath) ->
-    operations.push (callback) ->
-      fs.readFile path.join(repo.getWorkingDirectory(), relativePath), 'base64', (error, buffer) ->
-        workingDirectoryChanges[relativePath] = buffer.toString() if buffer?
-        callback(error)
+  workingDirectory = repo.getWorkingDirectory()
+  for relativePath, pathStatus of repo.getStatus()
+    do (relativePath, pathStatus) ->
+      operations.push (callback) ->
+        if repo.isStatusDeleted(pathStatus)
+          workingDirectoryChanges[relativePath] = null
+          callback()
+        else
+          fs.readFile path.join(workingDirectory, relativePath), 'base64', (error, buffer) ->
+            workingDirectoryChanges[relativePath] = buffer.toString() if buffer?
+            callback(error)
 
   async.waterfall operations, (error) -> callback(error, workingDirectoryChanges)

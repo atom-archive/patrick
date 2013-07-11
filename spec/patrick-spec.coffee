@@ -2,9 +2,10 @@
 fs = require 'fs'
 path = require 'path'
 
+git = require 'git-utils'
+rm = require('rimraf').sync
 tmp = require 'tmp'
 cp = require('wrench').copyDirSyncRecursive
-git = require 'git-utils'
 
 patrick = require '../lib/patrick'
 
@@ -33,7 +34,7 @@ describe 'patrick', ->
 
     runs ->
       [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
-      expect(snapshotError).toBeNull()
+      expect(snapshotError).toBeFalsy()
       expect(snapshot).not.toBeNull()
       patrick.mirror(targetPath, snapshot, mirrorHandler)
 
@@ -45,6 +46,8 @@ describe 'patrick', ->
       expect(mirrorError).toBeNull()
 
   beforeEach ->
+    sourcePath = null
+    targetPath = null
     snapshotHandler = jasmine.createSpy('snapshot handler')
     mirrorHandler = jasmine.createSpy('mirror handler')
 
@@ -78,7 +81,7 @@ describe 'patrick', ->
       beforeEach ->
         runs ->
           fs.writeFileSync(path.join(sourcePath, 'a.txt'), 'COOL BEANS')
-
+          fs.unlinkSync(path.join(sourcePath, 'b.txt'))
         waitsForSnapshot()
 
       it "applies the changes to the target repo's working directory", ->
