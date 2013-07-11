@@ -20,11 +20,13 @@
   },
   "devDependencies": {
     "grunt": "~0.4.1",
-    "jasmine-focused": "~0.10.0",
+    "jasmine-focused": "~0.11.0",
     "grunt-contrib-coffee": "~0.7.0",
     "grunt-cli": "~0.1.9",
     "grunt-coffeelint": "0.0.7",
     "rimraf": "~2.2.0",
-    "grunt-shell": "~0.3.0"
+    "grunt-shell": "~0.3.0",
+    "wrench": "~1.5.1",
+    "async": "~0.2.9"
   }
 }
