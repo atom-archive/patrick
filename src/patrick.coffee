@@ -60,7 +60,11 @@ module.exports =
         exec command, {cwd: repoPath}, callback
 
     operations.push (args..., callback) ->
-      command = "git checkout #{branch} && git reset --hard #{head}"
+      command = "git checkout #{branch}"
+      exec command, {cwd: repoPath}, callback
+
+    operations.push (args..., callback) ->
+      command = "git reset --hard #{head}"
       exec command, {cwd: repoPath}, callback
 
     for relativePath, contents of workingDirectoryChanges ? {}
