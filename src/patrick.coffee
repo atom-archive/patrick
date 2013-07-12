@@ -32,40 +32,55 @@ module.exports =
 
     async.waterfall operations, (error) -> callback(error, snapshot)
 
-  mirror: (repoPath, snapshot, callback) ->
+  mirror: (repoPath, snapshot, options, callback) ->
+    if _.isFunction(options)
+      callback = options
+      options = {}
+
+    {progressCallback} = options
+
     repo = git.open(repoPath)
     {branch, head, unpushedChanges, url, workingDirectoryChanges} = snapshot
 
     operations = []
+    operationCount = 0
     if repo?
       unless _.isEmpty(repo.getStatus())
         callback(new Error("Working directory is unclean: #{repo.getWorkingDirectory()}"))
         return
 
+      operationCount++
       operations.push (args..., callback) ->
         command = "git fetch #{url}"
+        progressCallback?('Fetching commits', command, operationCount)
         exec command, {cwd: repoPath}, (error) ->
           repo = git.open(repoPath) unless error?
           callback(error)
     else
+      operationCount++
       operations.push (args..., callback) ->
         command = "git clone --recursive #{url} #{repoPath}"
+        progressCallback?('Cloning repository', command, operationCount)
         exec command, {cwd: repoPath}, (error) ->
           repo = git.open(repoPath) unless error?
           callback(error)
 
     if unpushedChanges
+      operationCount++
       operations.push (args..., callback) -> tmp.file(callback)
       operations.push (bundleFile, args..., callback) ->
         fs.writeFile bundleFile, new Buffer(unpushedChanges, 'base64'), (error) ->
           callback(error, bundleFile)
       operations.push (bundleFile, callback) ->
         command = "git bundle unbundle #{bundleFile}"
+        progressCallback?('Applying unpushed changes', command, operationCount)
         exec command, {cwd: repoPath}, callback
 
+    operationCount++
     operations.push (args..., callback) ->
       if not repo?.getReferenceTarget("refs/heads/#{branch}")?
         command = "git checkout -b #{branch} #{head}"
+        progressCallback?('Checking out branch', command, operationCount)
         exec command, {cwd: repoPath}, callback
       else if repo?.getAheadBehindCount(branch).ahead > 0
         i = 1
@@ -74,11 +89,13 @@ module.exports =
           break unless repo.getReferenceTarget("refs/heads/#{newBranch}")?
 
         command = "git checkout -b #{newBranch} #{head}"
+        progressCallback?('Checking out branch', command, operationCount)
         exec command, {cwd: repoPath}, callback
       else
         operations = []
         operations.push (args..., callback) ->
           command = "git checkout #{branch}"
+          progressCallback?('Checking out branch', command, operationCount)
           exec command, {cwd: repoPath}, callback
 
         operations.push (args..., callback) ->
@@ -87,14 +104,20 @@ module.exports =
 
         async.waterfall operations, callback
 
-    for relativePath, contents of workingDirectoryChanges ? {}
-      do (relativePath, contents) ->
-        operations.push (args..., callback) ->
-          filePath = path.join(repoPath, relativePath)
-          if contents?
-            fs.writeFile filePath, new Buffer(contents, 'base64'), callback
-          else
-            fs.unlink filePath, callback
+    unless _.isEmpty(workingDirectoryChanges)
+      operationCount++
+      operations.push (args..., callback) ->
+        progressCallback?('Applying working directory changes', null, operationCount)
+        callback()
+
+      for relativePath, contents of workingDirectoryChanges
+        do (relativePath, contents) ->
+          operations.push (args..., callback) ->
+            filePath = path.join(repoPath, relativePath)
+            if contents?
+              fs.writeFile filePath, new Buffer(contents, 'base64'), callback
+            else
+              fs.unlink filePath, callback
 
     async.waterfall operations, callback
 

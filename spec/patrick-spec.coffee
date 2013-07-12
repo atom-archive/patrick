@@ -27,7 +27,7 @@ describe 'patrick', ->
     runs ->
       expect(error).toBeFalsy()
 
-  waitsForSnapshot = ->
+  waitsForSnapshot = (mirrorOptions={})->
     runs ->
       patrick.snapshot(sourcePath, snapshotHandler)
 
@@ -38,7 +38,7 @@ describe 'patrick', ->
       [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
       expect(snapshotError).toBeFalsy()
       expect(snapshot).not.toBeNull()
-      patrick.mirror(targetPath, snapshot, mirrorHandler)
+      patrick.mirror(targetPath, snapshot, mirrorOptions, mirrorHandler)
 
     waitsFor 'mirror handler', ->
       mirrorHandler.callCount > 0
@@ -172,3 +172,19 @@ describe 'patrick', ->
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual {}
+
+  describe 'when a progress callback is given', ->
+    it 'calls back for each operation with a description, command, and total operation count', ->
+      progressCallback = jasmine.createSpy('progress callback')
+
+      waitsForTargetRepo 'master.git'
+      waitsForSnapshot({progressCallback})
+
+      runs ->
+        expect(progressCallback.callCount).toBe 2
+        expect(progressCallback.argsForCall[0][0]).toBeTruthy()
+        expect(progressCallback.argsForCall[0][1]).toBeTruthy()
+        expect(progressCallback.argsForCall[0][2]).toBe 2
+        expect(progressCallback.argsForCall[1][0]).toBeTruthy()
+        expect(progressCallback.argsForCall[1][1]).toBeTruthy()
+        expect(progressCallback.argsForCall[1][2]).toBe 2
