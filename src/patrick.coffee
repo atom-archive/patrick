@@ -64,7 +64,10 @@ module.exports =
         exec command, {cwd: repoPath}, callback
 
     operations.push (args..., callback) ->
-      if repo?.getAheadBehindCount().ahead > 0
+      if not repo?.getReferenceTarget("refs/heads/#{branch}")?
+        command = "git checkout -b #{branch} #{head}"
+        exec command, {cwd: repoPath}, callback
+      else if repo?.getAheadBehindCount(branch).ahead > 0
         i = 1
         loop
           newBranch = "#{branch}-#{i++}"

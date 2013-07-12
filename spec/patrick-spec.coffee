@@ -162,3 +162,13 @@ describe 'patrick', ->
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual {}
+
+  describe 'when the source branch does not exist in the target repository', ->
+    it 'creates and checks out a new branch at the source HEAD', ->
+      waitsForTargetRepo 'master.git'
+      waitsForCommand 'git checkout -b blaster', {cwd: sourcePath}
+      waitsForSnapshot()
+      runs ->
+        expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+        expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+        expect(targetRepo.getStatus()).toEqual {}
