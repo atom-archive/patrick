@@ -2,7 +2,12 @@
   "name": "patrick",
   "version": "0.0.0",
   "description": "Git repository syncing",
-  "license": "BSD",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/atom/patrick/raw/master/LICENSE.md"
+    }
+  ],
   "main": "./lib/patrick.js",
   "scripts": {
     "prepublish": "grunt clean lint coffee",
