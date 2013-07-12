@@ -5,6 +5,7 @@
   "license": "BSD",
   "main": "./lib/patrick.js",
   "scripts": {
+    "prepublish": "grunt clean lint coffee",
     "test": "grunt test"
   },
   "repository": {
