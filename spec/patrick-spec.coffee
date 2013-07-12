@@ -151,3 +151,12 @@ describe 'patrick', ->
       runs ->
         [mirrorError] = mirrorHandler.argsForCall[0]
         expect(mirrorError).toBeTruthy()
+
+  describe 'when the source and target have the same HEAD', ->
+    it 'does change the target HEAD', ->
+      waitsForTargetRepo 'ahead.git'
+      waitsForSnapshot()
+      runs ->
+        expect(targetRepo.getHead()).toBe sourceRepo.getHead()
+        expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
+        expect(targetRepo.getStatus()).toEqual {}
