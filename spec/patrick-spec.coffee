@@ -89,6 +89,7 @@ describe 'patrick', ->
 
       runs ->
         fs.writeFileSync(path.join(sourcePath, 'a.txt'), 'COOL BEANS')
+        fs.writeFileSync(path.join(sourcePath, 'a1.txt'), 'NEW BEANS')
         fs.unlinkSync(path.join(sourcePath, 'b.txt'))
 
       waitsForSnapshot()
@@ -99,6 +100,7 @@ describe 'patrick', ->
         expect(targetRepo.getStatus()).toEqual sourceRepo.getStatus()
         expect(fs.readFileSync(path.join(targetPath, 'a.txt'), 'utf8')).toBe 'COOL BEANS'
         expect(fs.existsSync(path.join(targetPath, 'b.txt'))).toBe false
+        expect(fs.readFileSync(path.join(targetPath, 'a1.txt'), 'utf8')).toBe 'NEW BEANS'
 
   describe "when the target repository does not exist", ->
     it "clones the repository to the target path and updates the target HEAD", ->
