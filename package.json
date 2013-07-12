@@ -1,7 +1,7 @@
 {
   "name": "patrick",
   "version": "0.0.0",
-  "description": "Git repository syncing",
+  "description": "Snapshot and mirror Git repositories",
   "licenses": [
     {
       "type": "MIT",
