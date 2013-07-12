@@ -1,4 +1,4 @@
-# patrick
+# patrick [![Build Status](https://travis-ci.org/atom/patrick.png)](https://travis-ci.org/atom/patrick)
 
 Synchronize a Git repository from one place to another.
 
