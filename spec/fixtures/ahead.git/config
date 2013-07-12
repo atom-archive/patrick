@@ -5,7 +5,7 @@
 	logallrefupdates = true
 	precomposeunicode = false
 [remote "origin"]
-	url = http://atom.io/fake.git
+	url = https://github.com/atom/patrick.git
 	fetch = +refs/heads/*:refs/remotes/origin/*
 [branch "master"]
 	remote = origin
