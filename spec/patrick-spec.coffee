@@ -126,3 +126,28 @@ describe 'patrick', ->
         expect(targetRepo.getShortHead()).toBe 'master-1'
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual {}
+
+  describe 'when the target has working directory changes', ->
+    it 'does not discard the working directory changes or change the target HEAD', ->
+      fs.writeFileSync(path.join(targetPath, 'dirty.txt'), '')
+
+      waitsForTargetRepo 'ahead.git'
+
+      runs ->
+        patrick.snapshot(sourcePath, snapshotHandler)
+
+      waitsFor 'snapshot handler', ->
+        snapshotHandler.callCount > 0
+
+      runs ->
+        [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
+        expect(snapshotError).toBeFalsy()
+        expect(snapshot).not.toBeNull()
+        patrick.mirror(targetPath, snapshot, mirrorHandler)
+
+      waitsFor 'mirror handler', ->
+        mirrorHandler.callCount > 0
+
+      runs ->
+        [mirrorError] = mirrorHandler.argsForCall[0]
+        expect(mirrorError).toBeTruthy()

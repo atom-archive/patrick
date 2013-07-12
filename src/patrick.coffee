@@ -38,6 +38,10 @@ module.exports =
 
     operations = []
     if repo?
+      unless _.isEmpty(repo.getStatus())
+        callback(new Error("Working directory is unclean: #{repo.getWorkingDirectory()}"))
+        return
+
       operations.push (args..., callback) ->
         command = "git fetch #{url}"
         exec command, {cwd: repoPath}, (error) ->
