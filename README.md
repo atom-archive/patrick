@@ -23,7 +23,7 @@ patrick.snapshot '/repos/here', (error, snapshot) ->
 ### Mirror a snapshot
 
 ```coffeescript
-patrick.mirror snapshot, '/repos/there', (error) ->
+patrick.mirror '/repos/there', snapshot, (error) ->
   if error?
     console.error('mirror failed', error)
   else
