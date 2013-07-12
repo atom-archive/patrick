@@ -120,7 +120,7 @@ describe 'patrick', ->
       waitsForTargetRepo 'ahead.git'
 
       runs ->
-        waitsForCommand 'git add new.txt && git ci -am"new"', {cwd: targetPath}
+        waitsForCommand 'git add new.txt && git commit -am"new"', {cwd: targetPath}
 
       waitsForSnapshot()
 
