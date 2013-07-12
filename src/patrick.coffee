@@ -61,7 +61,7 @@ module.exports =
       operations.push (args..., callback) ->
         command = "git clone --recursive #{url} #{repoPath}"
         progressCallback?('Cloning repository', command, operationCount)
-        exec command, {cwd: repoPath}, (error) ->
+        exec command, (error) ->
           repo = git.open(repoPath) unless error?
           callback(error)
 
