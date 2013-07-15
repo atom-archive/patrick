@@ -137,6 +137,7 @@ describe 'patrick', ->
         runs ->
           fs.writeFileSync(path.join(sourcePath, 'a.txt'), 'COOL BEANS')
           fs.writeFileSync(path.join(sourcePath, 'a1.txt'), 'NEW BEANS')
+          fs.writeFileSync(path.join(sourcePath, 'a2.txt'), 'NEWER BEANS')
           fs.unlinkSync(path.join(sourcePath, 'b.txt'))
           fs.writeFileSync(path.join(targetPath , 'a.txt'), 'COOL BEANS')
           fs.writeFileSync(path.join(targetPath, 'a1.txt'), 'NEW BEANS')
@@ -147,6 +148,7 @@ describe 'patrick', ->
         runs ->
           expect(fs.readFileSync(path.join(targetPath, 'a.txt'), 'utf8')).toBe 'COOL BEANS'
           expect(fs.readFileSync(path.join(targetPath, 'a1.txt'), 'utf8')).toBe 'NEW BEANS'
+          expect(fs.readFileSync(path.join(targetPath, 'a2.txt'), 'utf8')).toBe 'NEWER BEANS'
           expect(fs.existsSync(path.join(targetPath, 'b.txt'))).toBe false
 
     describe 'when the changes differ from the source repository', ->

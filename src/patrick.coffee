@@ -45,10 +45,7 @@ module.exports =
     operations = []
     operationCount = 0
     if repo?
-      if isInSync(repo, snapshot)
-        callback()
-        return
-      unless _.isEmpty(repo.getStatus())
+      if not _.isEmpty(repo.getStatus()) and not isInSync(repo, snapshot)
         callback(new Error("Working directory is unclean: #{repo.getWorkingDirectory()}"))
         return
 
