@@ -155,7 +155,7 @@ describe 'patrick', ->
         expect(mirrorError).toBeTruthy()
 
   describe 'when the source and target have the same HEAD', ->
-    it 'does change the target HEAD', ->
+    it 'does not change the target HEAD', ->
       waitsForTargetRepo 'ahead.git'
       waitsForSnapshot()
       runs ->
