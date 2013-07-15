@@ -45,7 +45,7 @@ describe 'patrick', ->
 
     runs ->
       [mirrorError] = mirrorHandler.argsForCall[0]
-      expect(mirrorError).toBeNull()
+      expect(mirrorError).toBeFalsy()
 
   waitsForSourceRepo = (name) ->
     runs ->
@@ -130,29 +130,49 @@ describe 'patrick', ->
         expect(targetRepo.getStatus()).toEqual {}
 
   describe 'when the target has working directory changes', ->
-    it 'does not discard the working directory changes or change the target HEAD', ->
-      fs.writeFileSync(path.join(targetPath, 'dirty.txt'), '')
+    describe 'when the changes are the same as in the source working directory', ->
+      it 'mirrors the snapshot successfully', ->
+        waitsForTargetRepo 'ahead.git'
 
-      waitsForTargetRepo 'ahead.git'
+        runs ->
+          fs.writeFileSync(path.join(sourcePath, 'a.txt'), 'COOL BEANS')
+          fs.writeFileSync(path.join(sourcePath, 'a1.txt'), 'NEW BEANS')
+          fs.unlinkSync(path.join(sourcePath, 'b.txt'))
+          fs.writeFileSync(path.join(targetPath , 'a.txt'), 'COOL BEANS')
+          fs.writeFileSync(path.join(targetPath, 'a1.txt'), 'NEW BEANS')
+          fs.unlinkSync(path.join(targetPath, 'b.txt'))
 
-      runs ->
-        patrick.snapshot(sourcePath, snapshotHandler)
+        waitsForSnapshot()
 
-      waitsFor 'snapshot handler', ->
-        snapshotHandler.callCount > 0
+        runs ->
+          expect(fs.readFileSync(path.join(targetPath, 'a.txt'), 'utf8')).toBe 'COOL BEANS'
+          expect(fs.readFileSync(path.join(targetPath, 'a1.txt'), 'utf8')).toBe 'NEW BEANS'
+          expect(fs.existsSync(path.join(targetPath, 'b.txt'))).toBe false
 
-      runs ->
-        [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
-        expect(snapshotError).toBeFalsy()
-        expect(snapshot).not.toBeNull()
-        patrick.mirror(targetPath, snapshot, mirrorHandler)
+    describe 'when the changes differ from the source repository', ->
+      it 'fails to mirror the snapshot', ->
+        fs.writeFileSync(path.join(targetPath, 'dirty.txt'), '')
 
-      waitsFor 'mirror handler', ->
-        mirrorHandler.callCount > 0
+        waitsForTargetRepo 'ahead.git'
 
-      runs ->
-        [mirrorError] = mirrorHandler.argsForCall[0]
-        expect(mirrorError).toBeTruthy()
+        runs ->
+          patrick.snapshot(sourcePath, snapshotHandler)
+
+        waitsFor 'snapshot handler', ->
+          snapshotHandler.callCount > 0
+
+        runs ->
+          [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
+          expect(snapshotError).toBeFalsy()
+          expect(snapshot).not.toBeNull()
+          patrick.mirror(targetPath, snapshot, mirrorHandler)
+
+        waitsFor 'mirror handler', ->
+          mirrorHandler.callCount > 0
+
+        runs ->
+          [mirrorError] = mirrorHandler.argsForCall[0]
+          expect(mirrorError).toBeTruthy()
 
   describe 'when the source and target have the same HEAD', ->
     it 'does not change the target HEAD', ->

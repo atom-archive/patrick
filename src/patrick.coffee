@@ -45,6 +45,9 @@ module.exports =
     operations = []
     operationCount = 0
     if repo?
+      if isInSync(repo, snapshot)
+        callback()
+        return
       unless _.isEmpty(repo.getStatus())
         callback(new Error("Working directory is unclean: #{repo.getWorkingDirectory()}"))
         return
@@ -146,6 +149,33 @@ getWorkingDirectoryChanges = (repo, callback) ->
             callback(error)
 
   async.waterfall operations, (error) -> callback(error, workingDirectoryChanges)
+
+isInSync = (repo, snapshot) ->
+  {branch, head, workingDirectoryChanges} = snapshot
+  if repo.getShortHead() isnt branch
+    false
+  else if repo.getReferenceTarget(repo.getHead()) isnt head
+    false
+  else
+    workingDirectoryChanges ?= {}
+    repoChanges = repo.getStatus()
+    workingDirectory = repo.getWorkingDirectory()
+    for relativePath, status of repoChanges
+      targetPath = path.join(workingDirectory, relativePath)
+      sourceChange = workingDirectoryChanges[relativePath]
+      if repo.isStatusDeleted(status)
+        if fs.existsSync(targetPath) and sourceChange isnt null
+          return false
+      else if sourceChange is null
+        return false
+      else
+        try
+          if fs.readFileSync(targetPath, 'base64') isnt workingDirectoryChanges[relativePath]
+            return false
+        catch error
+          return false
+
+    true
 
 exec = (args..., callback) ->
   child_process.exec args..., (error, stdout, stderr) ->
