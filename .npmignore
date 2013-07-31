@@ -1,2 +1,5 @@
 *.coffee
 .pairs
+spec/
+.travis.yml
+.npmignore
