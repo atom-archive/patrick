@@ -1,6 +1,7 @@
 child_process = require 'child_process'
 fs = require 'fs'
 path = require 'path'
+parseUrl = require('url').parse
 
 _ = require 'underscore'
 async = require 'async'
@@ -45,6 +46,10 @@ module.exports =
     operations = []
     operationCount = 0
     if repo?
+      unless urlsMatch(url, repo.getConfigValue('remote.origin.url'))
+        callback(new Error("Repository already exists with different origin URL: #{repo.getWorkingDirectory()}"))
+        return
+
       if not _.isEmpty(repo.getStatus()) and not isInSync(repo, snapshot)
         callback(new Error("Working directory is unclean: #{repo.getWorkingDirectory()}"))
         return
@@ -120,6 +125,18 @@ module.exports =
               fs.unlink filePath, callback
 
     async.waterfall operations, callback
+
+urlsMatch = (url1='', url2='') ->
+  parsed1 = parseUrl(url1)
+  parsed2 = parseUrl(url2)
+  if parsed1.protocol is 'file:' and parsed2.protocol is 'file:'
+    parsed1.pathname is parsed2.pathname
+  else if parsed1.hostname and parsed1.hostname is parsed2.hostname
+    path1 = parsed1.pathname?.replace(/\.git$/, '')
+    path2 = parsed2.pathname?.replace(/\.git$/, '')
+    path1 is path2
+  else
+    false
 
 bundleUnpushedChanges = (repo, callback) ->
   localBranch = repo.getShortHead()

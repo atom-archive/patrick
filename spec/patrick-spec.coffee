@@ -58,6 +58,7 @@ describe 'patrick', ->
     runs ->
       cp(path.join(__dirname, 'fixtures', name), path.join(targetPath, '.git'))
       targetRepo = git.open(targetPath)
+      targetRepo.setConfigValue('remote.origin.url', "file://#{sourcePath}")
       waitsForCommand 'git reset --hard HEAD', {cwd: targetPath}
 
   beforeEach ->
@@ -194,6 +195,30 @@ describe 'patrick', ->
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual {}
+
+  describe 'when the target location has a different URL than the source', ->
+    it 'fails to mirror the snapshot', ->
+      waitsForTargetRepo 'master.git'
+
+      runs ->
+        targetRepo.setConfigValue('remote.origin.url', 'http://github.com/another/repo')
+        patrick.snapshot(sourcePath, snapshotHandler)
+
+      waitsFor 'snapshot handler', ->
+        snapshotHandler.callCount > 0
+
+      runs ->
+        [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
+        expect(snapshotError).toBeFalsy()
+        expect(snapshot).not.toBeNull()
+        patrick.mirror(targetPath, snapshot, mirrorHandler)
+
+      waitsFor 'mirror handler', ->
+        mirrorHandler.callCount > 0
+
+      runs ->
+        [mirrorError] = mirrorHandler.argsForCall[0]
+        expect(mirrorError).toBeTruthy()
 
   describe 'when a progress callback is given', ->
     it 'calls back for each operation with a description, command, and total operation count', ->
