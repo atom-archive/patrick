@@ -1,4 +1,4 @@
-{exec} = require 'child_process'
+child_process = require 'child_process'
 fs = require 'fs'
 path = require 'path'
 
@@ -16,7 +16,7 @@ describe 'patrick', ->
   waitsForCommand = (command, options) ->
     finished = false
     error = null
-    exec command, options, (err, stdout, stderr) ->
+    child_process.exec command, options, (err, stdout, stderr) ->
       error = err
       console.error 'Command failed', command, arguments if err?
       finished = true
@@ -195,6 +195,35 @@ describe 'patrick', ->
         expect(targetRepo.getHead()).toBe sourceRepo.getHead()
         expect(targetRepo.getReferenceTarget('HEAD')).toBe sourceRepo.getReferenceTarget('HEAD')
         expect(targetRepo.getStatus()).toEqual {}
+
+  describe 'when the target location and the source use the same ssh URL', ->
+    it 'mirrors the snapshot', ->
+      waitsForTargetRepo 'master.git'
+      execSpy = null
+
+      runs ->
+        sourceRepo.setConfigValue('remote.origin.url', 'git@github.com:/another/repo')
+        targetRepo.setConfigValue('remote.origin.url', 'git@github.com:/another/repo')
+        patrick.snapshot(sourcePath, snapshotHandler)
+
+      waitsFor 'snapshot handler', ->
+        snapshotHandler.callCount > 0
+
+      runs ->
+        [snapshotError, snapshot] = snapshotHandler.argsForCall[0]
+        expect(snapshotError).toBeFalsy()
+        expect(snapshot).not.toBeNull()
+        execSpy = spyOn(child_process, 'exec')
+        patrick.mirror(targetPath, snapshot, mirrorHandler)
+
+      waitsFor 'mirror handler', ->
+        execSpy.callCount > 0 or mirrorHandler.callCount > 0
+
+      runs ->
+        expect(execSpy.callCount).toBeGreaterThan 0
+
+        [command] = execSpy.argsForCall[0] if execSpy.argsForCall[0]
+        expect(command).toBe 'git fetch git@github.com:/another/repo'
 
   describe 'when the target location has a different URL than the source', ->
     it 'fails to mirror the snapshot', ->

@@ -126,9 +126,18 @@ module.exports =
 
     async.waterfall operations, callback
 
+convertToUrl = (maybeUrl) ->
+  {protocol, host} = parseUrl(maybeUrl)
+  gitSshUrl = /([^@]+)@([^:]+):(.*)/
+  if not protocol and not host and matches = maybeUrl.match(gitSshUrl)
+    [all, user, host, path] = matches
+    "git://#{user}@#{host}/#{path}"
+  else
+    maybeUrl
+
 urlsMatch = (url1='', url2='') ->
-  parsed1 = parseUrl(url1)
-  parsed2 = parseUrl(url2)
+  parsed1 = parseUrl(convertToUrl(url1))
+  parsed2 = parseUrl(convertToUrl(url2))
   if parsed1.protocol is 'file:' and parsed2.protocol is 'file:'
     parsed1.pathname is parsed2.pathname
   else if parsed1.hostname and parsed1.hostname is parsed2.hostname
