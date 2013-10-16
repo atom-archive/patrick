@@ -197,7 +197,7 @@ describe 'patrick', ->
         expect(targetRepo.getStatus()).toEqual {}
 
   describe 'when the target location and the source use the same ssh URL', ->
-    it 'fails to mirror the snapshot', ->
+    it 'mirrors the snapshot', ->
       waitsForTargetRepo 'master.git'
       execSpy = null
 
