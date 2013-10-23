@@ -11,6 +11,10 @@ tmp = require 'tmp'
 module.exports =
   snapshot: (repoPath, callback) ->
     repo = git.open(repoPath)
+    unless repo?
+      setImmediate -> callback("No Git repository at: #{repoPath}")
+      return
+
     snapshot =
       branch: repo.getShortHead()
       head: repo.getReferenceTarget(repo.getHead())

@@ -264,3 +264,12 @@ describe 'patrick', ->
         expect(progressCallback.argsForCall[1][0]).toBeTruthy()
         expect(progressCallback.argsForCall[1][1]).toBeTruthy()
         expect(progressCallback.argsForCall[1][2]).toBe 2
+
+  describe "when the path to snapshot does not contain a repository", ->
+    it "calls back with an error", ->
+      callback = jasmine.createSpy('callback')
+      patrick.snapshot(targetPath, callback)
+      waitsFor -> callback.callCount is 1
+      runs ->
+        expect(callback.argsForCall[0][0]).toBeTruthy()
+        expect(callback.argsForCall[0][1]).toBeFalsy()
