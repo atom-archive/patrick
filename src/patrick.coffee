@@ -39,6 +39,7 @@ module.exports =
       options = {}
 
     {progressCallback} = options
+    progressCallback ?= ->
 
     repo = git.open(repoPath)
     {branch, head, unpushedChanges, url, workingDirectoryChanges} = snapshot
@@ -57,7 +58,7 @@ module.exports =
       operationCount++
       operations.push (args..., callback) ->
         command = "git fetch #{url}"
-        progressCallback?('Fetching commits', command, operationCount)
+        progressCallback('Fetching commits', command, operationCount)
         exec command, {cwd: repoPath}, (error) ->
           repo = git.open(repoPath) unless error?
           callback(error)
@@ -65,7 +66,7 @@ module.exports =
       operationCount++
       operations.push (args..., callback) ->
         command = "git clone --recursive #{url} #{repoPath}"
-        progressCallback?('Cloning repository', command, operationCount)
+        progressCallback('Cloning repository', command, operationCount)
         exec command, (error) ->
           repo = git.open(repoPath) unless error?
           callback(error)
@@ -78,14 +79,14 @@ module.exports =
           callback(error, bundleFile)
       operations.push (bundleFile, callback) ->
         command = "git bundle unbundle #{bundleFile}"
-        progressCallback?('Applying unpushed changes', command, operationCount)
+        progressCallback('Applying unpushed changes', command, operationCount)
         exec command, {cwd: repoPath}, callback
 
     operationCount++
     operations.push (args..., callback) ->
       if not repo?.getReferenceTarget("refs/heads/#{branch}")?
         command = "git checkout -b #{branch} #{head}"
-        progressCallback?('Checking out branch', command, operationCount)
+        progressCallback('Checking out branch', command, operationCount)
         exec command, {cwd: repoPath}, callback
       else if repo?.getAheadBehindCount(branch).ahead > 0
         i = 1
@@ -94,13 +95,13 @@ module.exports =
           break unless repo.getReferenceTarget("refs/heads/#{newBranch}")?
 
         command = "git checkout -b #{newBranch} #{head}"
-        progressCallback?('Checking out branch', command, operationCount)
+        progressCallback('Checking out branch', command, operationCount)
         exec command, {cwd: repoPath}, callback
       else
         operations = []
         operations.push (args..., callback) ->
           command = "git checkout #{branch}"
-          progressCallback?('Checking out branch', command, operationCount)
+          progressCallback('Checking out branch', command, operationCount)
           exec command, {cwd: repoPath}, callback
 
         operations.push (args..., callback) ->
@@ -112,7 +113,7 @@ module.exports =
     unless _.isEmpty(workingDirectoryChanges)
       operationCount++
       operations.push (args..., callback) ->
-        progressCallback?('Applying working directory changes', null, operationCount)
+        progressCallback('Applying working directory changes', null, operationCount)
         callback()
 
       for relativePath, contents of workingDirectoryChanges
