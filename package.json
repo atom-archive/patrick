@@ -10,7 +10,7 @@
   ],
   "main": "./lib/patrick.js",
   "scripts": {
-    "prepublish": "grunt clean lint coffee",
+    "prepublish": "grunt publish",
     "test": "grunt test"
   },
   "repository": {
