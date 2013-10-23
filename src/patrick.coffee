@@ -135,8 +135,8 @@ convertToUrl = (maybeUrl) ->
   {protocol, host} = parseUrl(maybeUrl)
   gitSshUrl = /([^@]+)@([^:]+):(.*)/
   if not protocol and not host and matches = maybeUrl.match(gitSshUrl)
-    [all, user, host, path] = matches
-    "git://#{user}@#{host}/#{path}"
+    [all, user, host, urlPath] = matches
+    "git://#{user}@#{host}/#{urlPath}"
   else
     maybeUrl
 
