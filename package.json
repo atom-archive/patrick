@@ -21,7 +21,7 @@
     "url": "https://github.com/atom/patrick/issues"
   },
   "dependencies": {
-    "git-utils": "~0.25.0",
+    "git-utils": "~0.27.0",
     "tmp": "0.0.20",
     "async": "~0.2.9",
     "underscore": "~1.5.1"
